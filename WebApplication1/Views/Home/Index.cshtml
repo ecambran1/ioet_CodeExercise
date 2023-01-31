@@ -54,20 +54,30 @@
                 success: function (result) {
                     $("#carga").hide();
                     if (result == true | result != null) {
-                        
+
                         if (result.Status == false) {
+                            //clear file name
+                            $("#file").val('');
                             alert("Something happened when processing the file. (Detail results)");
                         }
                         else {
-                            //limpia el nombre del archivo elegido luego de terminada la operación.
+                            //clear file name
                             $("#file").val('');
+                            //create results table
                             CreateTable(JSON.stringify(result.Items));
                         }
                     }
                     else
+                    {
+                        //clear file name
+                        $("#file").val('');
                         alert("Something happened when processing the file. (General task)");
+                    }
+                        
                 },
                 error: function (err) {
+                    //clear file name
+                    $("#file").val('');
                     $("#carga").hide();
                     alert("Something happened when processing the file. (Uploading)");
                 }
