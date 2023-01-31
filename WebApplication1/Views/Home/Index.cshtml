@@ -1,0 +1,138 @@
+﻿@{
+    ViewBag.Title = "Employees payment calculation";
+}
+<script src="~/Scripts/jquery-3.4.1.min.js"></script>
+<div class="jumbotron">
+    <h2>ACME's Payment Calculation</h2>
+
+</div>
+<div id="carga" class="loader" hidden></div>
+<br />
+<br />
+<div class="row">
+    <div class="col-md-6">
+        <fieldset style="width: 100%">
+            <legend>Payment Calculation</legend>
+            <div class="col-md-7">
+                <input type="file" id="file" class="form-control" style=" height: 50px;padding-top:12px;" />
+            </div>
+            <div class="col-md-4">
+                <a data-toggle="tooltip" id="btnUpload" data-placement="bottom"
+                   class="btn botonImport" aria-label="Center Align" title="Cargar Archivo">
+                    <span class="fa fa-upload" aria-hidden="true" style="padding-top:12px;">  <font style="font-family: 'Comic Sans MS';">Cargar Archivo</font></span>
+                </a>
+            </div>
+        </fieldset>
+
+        <div id="TableDetail"></div>
+    </div>
+
+</div>
+<script type="text/javascript">
+
+    $(document).on('click', '#btnUpload', function () {
+        $("#TableDetail tr").remove();
+
+        if (window.FormData !== undefined) {
+            var fileUpload = $("#file").get(0);
+            if ($("#file").get(0).files.length == 0) {
+                alert("Please upload the file");
+                return;
+            }
+            $("#carga").show();
+            var files = fileUpload.files;
+            var fileData = new FormData();
+            for (var i = 0; i < files.length; i++) {
+                fileData.append(files[i].name, files[i]);
+            }
+            $.ajax({
+                url: '/Home/ProcessPaymentFile',
+                type: "POST",
+                contentType: false,
+                processData: false,
+                data: fileData,
+                success: function (result) {
+                    $("#carga").hide();
+                    if (result == true | result != null) {
+                        
+                        if (result.Status == false) {
+                            alert("Something happened when processing the file. (Detail results)");
+                        }
+                        else {
+                            //limpia el nombre del archivo elegido luego de terminada la operación.
+                            $("#file").val('');
+                            CreateTable(JSON.stringify(result.Items));
+                        }
+                    }
+                    else
+                        alert("Something happened when processing the file. (General task)");
+                },
+                error: function (err) {
+                    $("#carga").hide();
+                    alert("Something happened when processing the file. (Uploading)");
+                }
+            });
+
+        } else {
+            alert("FormData is not supported in the browser.");
+        }
+    });
+
+    $(document).on("click", ".nDetbtn", function () {
+        
+        let divShowHide = "#" + $(this).attr('id').replace("BtnDet", "Dets");
+        if ($(this).text().search("Show") >= 0)
+        {
+            $(this).html("Hide Daily Payment");
+            $(divShowHide).attr("hidden",false);
+            
+        }
+        else
+        {
+            $(this).html("Show Daily Payment");
+            $(divShowHide).attr("hidden",true);
+            
+        }
+
+    });
+
+    function CreateTable(result)
+    {
+        result = JSON.parse(result);
+        var tbl = $("<table/>").attr("id", "TableDetails");
+        $("#TableDetail").append(tbl);
+        var header = "<tr style='background-color:#3b83bd; color:white;'>"
+            + "<td style='text-align:center'>Employee</td>"
+            + "<td style='text-align:center'>Payment</td>"
+            + "<td style='text-align:center'>&nbsp;</td></tr>";
+
+        $("#TableDetails").append(header);
+        $("#TableDetails").attr("style", "width:100%;");
+        $("#TableDetails").attr("border", "1");
+        $("#TableDetails").attr("BORDERCOLOR", "#FFFFFF");
+        for (var i = 0; i < result.length; i++) {
+            var tr = "<tr style='border-bottom: 1px solid #3b83bd;'>";
+            var td1 = "<td style='text-align:center'>" + result[i]["EmployeeName"] + "</td>";
+            var datos = JSON.parse(JSON.stringify(result[i]["EmployeePaymentBalance"]));
+            var totalEmpl = 0;
+            var tablaDatos = '<table id="TableDet' + i + '" style = "width: 100 % " border BORDERCOLOR = "#FFFFFF" > ';
+            var headert2 = "<tr style='background-color:#7c7c7c; color:white;'>";
+            var dett2 = "<tr style='border-bottom: 1px solid #3b83bd;'>";
+            for (var elem = 0; elem < datos.length; elem++)
+            {
+                totalEmpl += datos[elem].DailyPayment;
+                //adding detail by day
+                headert2 += "<td style='text-align:center'>&nbsp;" + datos[elem].Day + "&nbsp;</td>";
+                dett2 += "<td style='text-align:center'>&nbsp;" + datos[elem].DailyPayment + "USD&nbsp;</td>";    
+            };
+            headert2 += "</tr>";
+            dett2 += "</tr>";
+
+            var td2 = "<td style='text-align:center'>The amount to pay is: " + totalEmpl + "USD<div id='Dets" + i + "' hidden=true><br/>" +
+                tablaDatos + headert2 + dett2 + "</table></div></td>" +
+                "<td><button id='BtnDet" + i + "' class='nDetbtn'>Show Daily Payment</button></td></tr>";
+            
+            $("#TableDetails").append(tr + td1 + td2 );
+        }
+    }
+</script>
